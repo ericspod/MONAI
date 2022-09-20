@@ -345,9 +345,11 @@ class ResampleToMatch(SpatialResample):
         if dst_affine is not None:
             super().update_meta(img, dst_affine)
         if isinstance(img_dst, MetaTensor) and isinstance(img, MetaTensor):
-            original_fname = img.meta[Key.FILENAME_OR_OBJ]
+            original_fname = img.meta.get(Key.FILENAME_OR_OBJ, None)
             img.meta = deepcopy(img_dst.meta)
-            img.meta[Key.FILENAME_OR_OBJ] = original_fname  # keep the original name, the others are overwritten
+
+            if original_fname is not None:
+                img.meta[Key.FILENAME_OR_OBJ] = original_fname  # keep the original name, the others are overwritten
 
     @deprecated_arg(
         name="src_meta", since="0.9", msg_suffix="img should be `MetaTensor`, so affine can be extracted directly."

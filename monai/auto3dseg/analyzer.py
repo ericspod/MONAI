@@ -774,7 +774,7 @@ class FilenameStats(Analyzer):
                 raise ValueError(f"Data with key {self.key} is missing ")
             if self.meta_key not in d:
                 raise ValueError(f"Meta data with key {self.meta_key} is missing")
-            d[self.stats_name] = d[self.meta_key][ImageMetaKey.FILENAME_OR_OBJ]
+            d[self.stats_name] = d[self.meta_key].get(ImageMetaKey.FILENAME_OR_OBJ, "None")
         else:
             d[self.stats_name] = "None"
 

@@ -91,7 +91,10 @@ class CSVSaver:
             meta_data: the metadata information corresponding to the data.
 
         """
-        save_key = meta_data[Key.FILENAME_OR_OBJ] if meta_data else str(self._data_index)
+        if meta_data is None:
+            meta_data = {}
+
+        save_key = meta_data.get(Key.FILENAME_OR_OBJ, str(self._data_index))
         self._data_index += 1
         if isinstance(data, torch.Tensor):
             data = data.detach().cpu().numpy()

@@ -420,10 +420,14 @@ class SaveImage(Transform):
             meta_data: key-value pairs of metadata corresponding to the data.
         """
         meta_data = img.meta if isinstance(img, MetaTensor) else meta_data
-        subject = meta_data[Key.FILENAME_OR_OBJ] if meta_data else str(self._data_index)
-        patch_index = meta_data.get(Key.PATCH_INDEX, None) if meta_data else None
+        if meta_data is None:
+            meta_data = {}
+
+        subject = meta_data.get(Key.FILENAME_OR_OBJ, str(self._data_index))
+
+        patch_index = meta_data.get(Key.PATCH_INDEX, None)
         filename = self.folder_layout.filename(subject=f"{subject}", idx=patch_index)
-        if meta_data and len(ensure_tuple(meta_data.get("spatial_shape", ()))) == len(img.shape):
+        if len(ensure_tuple(meta_data.get("spatial_shape", ()))) == len(img.shape):
             self.data_kwargs["channel_dim"] = None
 
         err = []

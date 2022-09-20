@@ -112,10 +112,13 @@ class PNGSaver:
             :py:meth:`monai.data.png_writer.write_png`
 
         """
-        filename = meta_data[Key.FILENAME_OR_OBJ] if meta_data else str(self._data_index)
+        if meta_data is None:
+            meta_data = {}
+
+        filename = meta_data.get(Key.FILENAME_OR_OBJ, str(self._data_index))
         self._data_index += 1
-        spatial_shape = meta_data.get("spatial_shape", None) if meta_data and self.resample else None
-        patch_index = meta_data.get(Key.PATCH_INDEX, None) if meta_data else None
+        spatial_shape = meta_data.get("spatial_shape", None) if self.resample else None
+        patch_index = meta_data.get(Key.PATCH_INDEX, None)
 
         if isinstance(data, torch.Tensor):
             data = data.detach().cpu().numpy()
