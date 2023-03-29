@@ -113,6 +113,9 @@ class _ProcessThread(Thread):
         finally:
             torch.utils.data._utils.worker._worker_info = None  # clean up global data used for processes
 
+    def terminate(self):
+        pass
+
 
 class _ProcessQueue(Queue):
     """Shim class to make a thread queue look like a process queue to the DataLoader class."""
