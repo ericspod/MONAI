@@ -50,6 +50,7 @@ doRuffFix=false
 doClangFormat=false
 doCopyRight=false
 doPytypeFormat=false
+doPyrightFormat=false
 doMypyFormat=false
 doCleanup=false
 doDistTests=false
@@ -88,6 +89,7 @@ function print_usage {
     echo ""
     echo "Python type check options:"
     echo "    --pytype          : perform \"pytype\" static type checks"
+    echo "    --pyright          : perform \"pyright\" static type checks"
     echo "    -j, --jobs        : number of parallel jobs to run \"pytype\" (default $NUM_PARALLEL)"
     echo "    --mypy            : perform \"mypy\" static type checks"
     echo ""
@@ -313,6 +315,9 @@ do
         ;;
         --pytype)
             doPytypeFormat=true
+        ;;
+        --pyright)
+            doPyrightFormat=true
         ;;
         --mypy)
             doMypyFormat=true
@@ -649,6 +654,31 @@ then
         else
             echo "${green}passed!${noColor}"
         fi
+    fi
+    set -e # enable exit on failure
+fi
+
+if [ $doPyrightFormat = true ]
+then
+    set +e  # disable exit on failure so that diagnostics can be given on failure
+    echo "${separator}${blue}pyright${noColor}"
+    # ensure that the necessary packages for code format testing are installed
+    if ! is_pip_installed pyright
+    then
+        install_deps
+    fi
+
+    ${cmdPrefix}"${PY_EXE}" -m pyright --version
+
+    ${cmdPrefix}"${PY_EXE}" -m pyright --threads ${NUM_PARALLEL} --pythonversion="$(${PY_EXE} -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")" "$homedir"
+
+    pyright_status=$?
+    if [ ${pyright_status} -ne 0 ]
+    then
+        echo "${red}failed!${noColor}"
+        exit ${pyright_status}
+    else
+        echo "${green}passed!${noColor}"
     fi
     set -e # enable exit on failure
 fi

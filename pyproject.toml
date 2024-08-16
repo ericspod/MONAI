@@ -71,3 +71,10 @@ precise_return = true
 protocols = true
 # Experimental: Only load submodules that are explicitly imported.
 strict_import = false
+
+[tool.pyright]
+include = ["monai"]
+exclude = ["versioneer.py", "_version.py", "tests/**/*.py"]
+typeCheckingMode = "basic"
+ analyzeUnannotatedFunctions = false
+ 
