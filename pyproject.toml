@@ -74,7 +74,6 @@ strict_import = false
 
 [tool.pyright]
 include = ["monai"]
-exclude = ["versioneer.py", "_version.py", "tests/**/*.py"]
+exclude = ["versioneer.py", "monai/_version.py", "tests/**/*.py"]
 typeCheckingMode = "basic"
- analyzeUnannotatedFunctions = false
- 
+analyzeUnannotatedFunctions = false
