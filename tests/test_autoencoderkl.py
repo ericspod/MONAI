@@ -11,6 +11,7 @@
 
 from __future__ import annotations
 
+from itertools import product
 import os
 import tempfile
 import unittest
@@ -25,10 +26,20 @@ from monai.networks.nets import AutoencoderKL
 from monai.utils import optional_import
 from tests.utils import SkipIfBeforePyTorchVersion, skip_if_downloading_fails, testing_data_config
 
+
+from tests.utils import test_script_save
+
 tqdm, has_tqdm = optional_import("tqdm", name="tqdm")
 _, has_einops = optional_import("einops")
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+# copied from torch.testing._internal.jit_utils to avoid having to import expecttest 
+# https://github.com/pytorch/pytorch/issues/52329#issuecomment-780925804
+def clear_class_registry():
+    torch._C._jit_clear_class_registry()
+    torch.jit._recursive.concrete_type_store = torch.jit._recursive.ConcreteTypeStore()
+    torch.jit._state._clear_class_state()
 
 
 CASES_NO_ATTENTION = [
@@ -332,6 +343,26 @@ class TestAutoEncoderKL(unittest.TestCase):
 
             net.load_old_state_dict(torch.load(weight_path), verbose=False)
 
+    @parameterized.expand(list(product([True, False], repeat=2)))
+    def test_torchscript(self, use_checkpointing, use_convtranspose):
+        clear_class_registry()
+
+        input_param = {
+            "spatial_dims": 2,
+            "in_channels": 1,
+            "out_channels": 1,
+            "channels": (4, 4, 4),
+            "latent_channels": 4,
+            "attention_levels": (False, False, False),
+            "num_res_blocks": 1,
+            "norm_num_groups": 4,
+            "with_encoder_nonlocal_attn": False,
+            "with_decoder_nonlocal_attn": False,
+            "use_checkpoint": use_checkpointing,
+            "use_convtranspose": use_convtranspose,
+        }
+        net = AutoencoderKL(**input_param).to(device)
+        test_script_save(net, torch.rand(1, 1, 16, 16))
 
 if __name__ == "__main__":
     unittest.main()
