@@ -39,7 +39,7 @@ if TYPE_CHECKING:
 else:
     tqdm, has_tqdm = optional_import("tqdm", "4.47.0", min_version, "tqdm")
 
-__all__ = ["check_hash", "download_url", "extractall", "download_and_extract", "get_logger", "SUPPORTED_HASH_TYPES"]
+__all__ = ["check_hash", "download_url", "extractall", "download_and_extract", "path_basename", "SUPPORTED_HASH_TYPES"]
 
 SUPPORTED_HASH_TYPES = {"md5": hashlib.md5, "sha1": hashlib.sha1, "sha256": hashlib.sha256, "sha512": hashlib.sha512}
 
@@ -49,7 +49,7 @@ logger = get_logger("monai.utils.download")
 __all__.append("logger")
 
 
-def _basename(p: PathLike) -> str:
+def path_basename(p: PathLike) -> str:
     """get the last part of the path (removing the trailing slash if it exists)"""
     sep = os.path.sep + (os.path.altsep or "") + "/ "
     return Path(f"{p}".rstrip(sep)).name
@@ -79,7 +79,7 @@ def _download_with_progress(url: str, filepath: Path, progress: bool = True) -> 
                         self.total = tsize
                     self.update(b * bsize - self.n)  # will also set self.n = b * bsize
 
-            with TqdmUpTo(unit="B", unit_scale=True, unit_divisor=1024, miniters=1, desc=_basename(filepath)) as t:
+            with TqdmUpTo(unit="B", unit_scale=True, unit_divisor=1024, miniters=1, desc=path_basename(filepath)) as t:
                 urlretrieve(url, filepath, reporthook=t.update_to)
         else:
             if not has_tqdm and progress:
@@ -123,7 +123,7 @@ def check_hash(filepath: PathLike, val: str | None = None, hash_type: str = "md5
         logger.error(f"check_hash failed {actual_hash.hexdigest()}.")
         return False
 
-    logger.info(f"Verified '{_basename(filepath)}', {hash_type}: {val}.")
+    logger.info(f"Verified '{path_basename(filepath)}', {hash_type}: {val}.")
     return True
 
 
@@ -163,7 +163,7 @@ def download_url(
 
     """
     if not filepath:
-        filepath = Path(".", _basename(url)).resolve()
+        filepath = Path(".", path_basename(url)).resolve()
         logger.info(f"Default downloading to '{filepath}'")
     filepath = Path(filepath)
     if filepath.exists():
@@ -175,7 +175,7 @@ def download_url(
         return
     try:
         with tempfile.TemporaryDirectory() as tmp_dir:
-            tmp_name = Path(tmp_dir, _basename(filepath))
+            tmp_name = Path(tmp_dir, path_basename(filepath))
             if urlparse(url).netloc == "drive.google.com":
                 if not has_gdown:
                     raise RuntimeError("To download files from Google Drive, please install the gdown dependency.")
@@ -244,7 +244,7 @@ def extractall(
     """
     if has_base:
         # the extracted files will be in this folder
-        cache_dir = Path(output_dir, _basename(filepath).split(".")[0])
+        cache_dir = Path(output_dir, path_basename(filepath).split(".")[0])
     else:
         cache_dir = Path(output_dir)
     if cache_dir.exists() and next(cache_dir.iterdir(), None) is not None:
@@ -302,6 +302,6 @@ def download_and_extract(
         progress: whether to display progress bar.
     """
     with tempfile.TemporaryDirectory() as tmp_dir:
-        filename = filepath or Path(tmp_dir, _basename(url)).resolve()
+        filename = filepath or Path(tmp_dir, path_basename(url)).resolve()
         download_url(url=url, filepath=filename, hash_val=hash_val, hash_type=hash_type, progress=progress)
         extractall(filepath=filename, output_dir=output_dir, file_type=file_type, has_base=has_base)
