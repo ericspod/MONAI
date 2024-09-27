@@ -11,6 +11,22 @@
 
 from __future__ import annotations
 
-from .datasets import CrossValidation, DecathlonDataset, MedNISTDataset, TciaDataset
-from .mmars import MODEL_DESC, RemoteMMARKeys, download_mmar, get_model_spec, load_from_mmar
-from .utils import SUPPORTED_HASH_TYPES, check_hash, download_and_extract, download_url, extractall, get_logger, logger
+# from .datasets import CrossValidation, DecathlonDataset, MedNISTDataset, TciaDataset
+# from .mmars import MODEL_DESC, RemoteMMARKeys, download_mmar, get_model_spec, load_from_mmar
+# from .utils import SUPPORTED_HASH_TYPES, check_hash, download_and_extract, download_url, extractall, get_logger, logger
+
+from . import (
+    autoseg3d,
+    deepedit,
+    deepgrow,
+    detection,
+    generation,
+    manifest,
+    mmars,
+    nnunet,
+    nuclick,
+    pathology,
+    reconstruction,
+    tcia,
+    vista3d,
+)

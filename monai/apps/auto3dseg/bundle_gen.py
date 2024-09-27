@@ -27,8 +27,7 @@ from urllib.parse import urlparse
 
 import torch
 
-from monai.apps import download_and_extract
-from monai.apps.utils import get_logger
+from monai.utils import get_logger, download_and_extract
 from monai.auto3dseg.algo_gen import Algo, AlgoGen
 from monai.auto3dseg.utils import (
     _prepare_cmd_bcprun,

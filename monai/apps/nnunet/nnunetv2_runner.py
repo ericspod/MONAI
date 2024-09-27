@@ -29,9 +29,17 @@ join, _ = optional_import("batchgenerators.utilities.file_and_folder_operations"
 tqdm, has_tqdm = optional_import("tqdm", name="tqdm")
 nib, _ = optional_import("nibabel")
 
-logger = monai.apps.utils.get_logger(__name__)
+logger = None # monai.apps.utils.get_logger(__name__)
 
 __all__ = ["nnUNetV2Runner"]
+
+
+def get_local_logger():
+    global logger
+    if logger is None:
+        logger = monai.apps.get_logger(__name__)
+
+    return logger
 
 
 class nnUNetV2Runner:  # noqa: N801
@@ -200,7 +208,7 @@ class nnUNetV2Runner:  # noqa: N801
 
             self.dataset_name = maybe_convert_to_dataset_name(int(self.dataset_name_or_id))
         except BaseException:
-            logger.warning(
+            get_local_logger().warning(
                 f"Dataset with name/ID: {self.dataset_name_or_id} cannot be found in the record. "
                 "Please ignore the message above if you are running the pipeline from a fresh start. "
                 "But if the dataset is expected to be found, please check your input_config."
@@ -224,7 +232,7 @@ class nnUNetV2Runner:  # noqa: N801
             dataset_ids = [_item.split(os.sep)[-1] for _item in subdirs]
             dataset_ids = [_item.split("_")[0] for _item in dataset_ids]
             if raw_data_foldername_prefix in dataset_ids:
-                logger.warning("Dataset with the same ID exists!")
+                get_local_logger().warning("Dataset with the same ID exists!")
                 return
 
             data_dir = self.input_info.pop("dataroot")
@@ -246,7 +254,7 @@ class nnUNetV2Runner:  # noqa: N801
                 os.makedirs(os.path.join(raw_data_foldername, "imagesTr"))
                 os.makedirs(os.path.join(raw_data_foldername, "labelsTr"))
             else:
-                logger.error("The datalist file has incorrect format: the `training` key is not found.")
+                get_local_logger().error("The datalist file has incorrect format: the `training` key is not found.")
                 return
 
             test_key = None
@@ -278,7 +286,7 @@ class nnUNetV2Runner:  # noqa: N801
                 output_datafolder=raw_data_foldername,
             )
         except BaseException as err:
-            logger.warning(f"Input config may be incorrect. Detail info: error/exception message is:\n {err}")
+            get_local_logger().warning(f"Input config may be incorrect. Detail info: error/exception message is:\n {err}")
             return
 
     def convert_msd_dataset(self, data_dir: str, overwrite_id: str | None = None, n_proc: int = -1) -> None:
@@ -323,7 +331,7 @@ class nnUNetV2Runner:  # noqa: N801
 
         npfp = self.default_num_processes if npfp < 0 else npfp
 
-        logger.info("Fingerprint extraction...")
+        get_local_logger().info("Fingerprint extraction...")
         extract_fingerprints([int(self.dataset_name_or_id)], fpe, npfp, verify_dataset_integrity, clean, verbose)
 
     def plan_experiments(
@@ -361,7 +369,7 @@ class nnUNetV2Runner:  # noqa: N801
         """
         from nnunetv2.experiment_planning.plan_and_preprocess_api import plan_experiments
 
-        logger.info("Experiment planning...")
+        get_local_logger().info("Experiment planning...")
         plan_experiments(
             [int(self.dataset_name_or_id)],
             pl,
@@ -403,7 +411,7 @@ class nnUNetV2Runner:  # noqa: N801
         """
         from nnunetv2.experiment_planning.plan_and_preprocess_api import preprocess
 
-        logger.info("Preprocessing...")
+        get_local_logger().info("Preprocessing...")
         preprocess(
             [int(self.dataset_name_or_id)],
             overwrite_plans_name,
@@ -515,15 +523,15 @@ class nnUNetV2Runner:  # noqa: N801
         """
         if "num_gpus" in kwargs:
             kwargs.pop("num_gpus")
-            logger.warning("please use gpu_id to set the GPUs to use")
+            get_local_logger().warning("please use gpu_id to set the GPUs to use")
 
         if "tr" in kwargs:
             kwargs.pop("tr")
-            logger.warning("please specify the `trainer_class_name` in the __init__ of `nnUNetV2Runner`.")
+            get_local_logger().warning("please specify the `trainer_class_name` in the __init__ of `nnUNetV2Runner`.")
 
         if "npz" in kwargs:
             kwargs.pop("npz")
-            logger.warning("please specify the `export_validation_probabilities` in the __init__ of `nnUNetV2Runner`.")
+            get_local_logger().warning("please specify the `export_validation_probabilities` in the __init__ of `nnUNetV2Runner`.")
 
         cmd = self.train_single_model_command(config, fold, gpu_id, kwargs)
         run_cmd(cmd, shell=True)
@@ -581,7 +589,7 @@ class nnUNetV2Runner:  # noqa: N801
             gpu_id_for_all = tuple(range(num_gpus))
         elif isinstance(gpu_id_for_all, int):
             gpu_id_for_all = ensure_tuple(gpu_id_for_all)
-        logger.info(f"number of GPUs is {len(gpu_id_for_all)}, device ids are {gpu_id_for_all}")
+        get_local_logger().info(f"number of GPUs is {len(gpu_id_for_all)}, device ids are {gpu_id_for_all}")
         if len(gpu_id_for_all) > 1:
             self.train_parallel(configs=ensure_tuple(configs), gpu_id_for_all=gpu_id_for_all, **kwargs)
         else:
@@ -615,7 +623,7 @@ class nnUNetV2Runner:  # noqa: N801
         from nnunetv2.training.dataloading.utils import unpack_dataset
 
         for folder_name in folder_names:
-            logger.info(f"unpacking '{folder_name}'...")
+            get_local_logger().info(f"unpacking '{folder_name}'...")
             unpack_dataset(
                 folder=folder_name,
                 unpack_segmentation=True,
@@ -666,7 +674,7 @@ class nnUNetV2Runner:  # noqa: N801
             for gpu_id, gpu_cmd in cmds.items():
                 if not gpu_cmd:
                     continue
-                logger.info(
+                get_local_logger().info(
                     f"training - stage {s + 1}:\n"
                     f"for gpu {gpu_id}, commands: {gpu_cmd}\n"
                     f"log '.txt' inside '{os.path.join(self.nnunet_results, self.dataset_name)}'"
@@ -677,7 +685,7 @@ class nnUNetV2Runner:  # noqa: N801
                 if not stage[device_id]:
                     continue
                 cmd_str = "; ".join(stage[device_id])
-                logger.info(f"Current running command on GPU device {device_id}:\n{cmd_str}\n")
+                get_local_logger().info(f"Current running command on GPU device {device_id}:\n{cmd_str}\n")
                 processes.append(subprocess.Popen(cmd_str, shell=True, stdout=subprocess.DEVNULL))
             # finish this stage first
             for p in processes:

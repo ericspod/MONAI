@@ -21,12 +21,11 @@ from logging.config import fileConfig
 from pathlib import Path
 from typing import Any, Sequence
 
-from monai.apps.utils import get_logger
 from monai.bundle.config_parser import ConfigParser
 from monai.bundle.properties import InferProperties, MetaProperties, TrainProperties
 from monai.bundle.utils import DEFAULT_EXP_MGMT_SETTINGS, EXPR_KEY, ID_REF_KEY, ID_SEP_KEY
 from monai.config import PathLike
-from monai.utils import BundleProperty, BundlePropertyConfig, deprecated_arg, ensure_tuple
+from monai.utils import get_logger, BundleProperty, BundlePropertyConfig, deprecated_arg, ensure_tuple
 
 __all__ = ["BundleWorkflow", "ConfigWorkflow"]
 

@@ -29,7 +29,7 @@ import torch
 from torch.cuda import is_available
 
 from monai._version import get_versions
-from monai.apps.utils import _basename, download_url, extractall, get_logger
+from monai.utils import path_basename, download_url, extractall, get_logger
 from monai.bundle.config_item import ConfigComponent
 from monai.bundle.config_parser import ConfigParser
 from monai.bundle.utils import DEFAULT_INFERENCE, DEFAULT_METADATA, merge_kv
@@ -504,7 +504,7 @@ def download(
             or you can specify the environment variable NGC_ORG and NGC_TEAM.
         url: url to download the data. If not `None`, data will be downloaded directly
             and `source` will not be checked.
-            If `name` is `None`, filename is determined by `monai.apps.utils._basename(url)`.
+            If `name` is `None`, filename is determined by `monai.apps.utils.path_basename(url)`.
         remove_prefix: This argument is used when `source` is "ngc" or "ngc_private". Currently, all ngc bundles
             have the ``monai_`` prefix, which is not existing in their model zoo contrasts. In order to
             maintain the consistency between these two sources, remove prefix is necessary.
@@ -549,7 +549,7 @@ def download(
         if name_ is not None:
             filepath = bundle_dir_ / f"{name_}.zip"
         else:
-            filepath = bundle_dir_ / f"{_basename(url_)}"
+            filepath = bundle_dir_ / f"{path_basename(url_)}"
         download_url(url=url_, filepath=filepath, hash_val=None, progress=progress_)
         extractall(filepath=filepath, output_dir=bundle_dir_, has_base=True)
     else:

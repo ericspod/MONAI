@@ -81,8 +81,9 @@ if sys.version_info.major != PY_REQUIRED_MAJOR or sys.version_info.minor < PY_RE
 
 
 from . import (  # noqa: E402
-    apps,
-    auto3dseg,
+    # apps,
+    # auto3dseg,
+    utils,
     bundle,
     config,
     data,
@@ -95,13 +96,12 @@ from . import (  # noqa: E402
     networks,
     optimizers,
     transforms,
-    utils,
     visualize,
 )
 
 __all__ = [
-    "apps",
-    "auto3dseg",
+    # "apps",
+    # "auto3dseg",
     "bundle",
     "config",
     "data",

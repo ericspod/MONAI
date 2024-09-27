@@ -23,7 +23,7 @@ from monai.utils import StrEnum, ensure_tuple, optional_import
 tqdm, has_tqdm = optional_import("tqdm", name="tqdm")
 nib, _ = optional_import("nibabel")
 
-logger = monai.apps.utils.get_logger(__name__)
+logger = None # monai.apps.get_logger(__name__)
 
 __all__ = ["analyze_data", "create_new_data_copy", "create_new_dataset_json", "NNUNETMode"]
 
@@ -33,6 +33,14 @@ class NNUNETMode(StrEnum):
     N_3D_FULLRES = "3d_fullres"
     N_3D_LOWRES = "3d_lowres"
     N_3D_CASCADE_FULLRES = "3d_cascade_fullres"
+
+
+def get_local_logger():
+    global logger
+    if logger is None:
+        logger = monai.apps.get_logger(__name__)
+
+    return logger
 
 
 def analyze_data(datalist_json: dict, data_dir: str) -> tuple[int, int]:
@@ -47,7 +55,7 @@ def analyze_data(datalist_json: dict, data_dir: str) -> tuple[int, int]:
         os.path.join(data_dir, datalist_json["training"][0]["image"])
     )
     num_input_channels = img.size()[0] if img.dim() == 4 else 1
-    logger.info(f"num_input_channels: {num_input_channels}")
+    get_local_logger().info(f"num_input_channels: {num_input_channels}")
 
     num_foreground_classes = 0
     for _i in range(len(datalist_json["training"])):
@@ -55,7 +63,7 @@ def analyze_data(datalist_json: dict, data_dir: str) -> tuple[int, int]:
             os.path.join(data_dir, datalist_json["training"][_i]["label"])
         )
         num_foreground_classes = max(num_foreground_classes, int(seg.max()))
-    logger.info(f"num_foreground_classes: {num_foreground_classes}")
+    get_local_logger().info(f"num_foreground_classes: {num_foreground_classes}")
 
     return num_input_channels, num_foreground_classes
 
@@ -82,7 +90,7 @@ def create_new_data_copy(
         if _key is None:
             continue
 
-        logger.info(f"converting data section: {_key}...")
+        get_local_logger().info(f"converting data section: {_key}...")
         for _k in tqdm(range(len(datalist_json[_key]))) if has_tqdm else range(len(datalist_json[_key])):
             orig_img_name = (
                 datalist_json[_key][_k]["image"]

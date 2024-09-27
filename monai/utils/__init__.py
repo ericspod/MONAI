@@ -11,6 +11,8 @@
 
 from __future__ import annotations
 
+from .logging import get_logger
+from .download import path_basename, check_hash, download_url, extractall, download_and_extract, SUPPORTED_HASH_TYPES
 from .component_store import ComponentStore
 from .decorators import MethodReplacer, RestartGenerator
 from .deprecate_utils import DeprecatedError, deprecated, deprecated_arg, deprecated_arg_default
