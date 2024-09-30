@@ -49,6 +49,32 @@ def get_dist_device():
     return None
 
 
+def get_rank_robust():
+    """
+    Get the rank of the process regardless of if Ignite is present or if distributed as been initialised.
+    If Ignite is not present and `torch.distributed` is not available initialised, return 0 without exception.
+    """
+    if has_ignite:
+        return idist.get_rank()
+    elif dist.is_available() and dist.is_initialized():
+        return dist.get_rank()
+    else:
+        return 0
+    
+
+def get_world_size_robust():
+    """
+    Get the world size regardless of if Ignite is present or if distributed as been initialised.
+    If Ignite is not present and `torch.distributed` is not available initialised, return 1 without exception.
+    """
+    if has_ignite:
+        return idist.get_world_size()
+    elif dist.is_available() and dist.is_initialized():
+        return dist.get_world_size()
+    else:
+        return 1
+    
+
 @overload
 def evenly_divisible_all_gather(data: torch.Tensor, concat: Literal[True]) -> torch.Tensor: ...
 
