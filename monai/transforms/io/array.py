@@ -433,7 +433,7 @@ class SaveImage(Transform):
             if writer_ is None:
                 raise ValueError(f"writer {writer} not found")
             writer = writer_
-        self.writers = image_writer.resolve_writer(self.output_ext) if writer is None else (writer,)
+        self.writers:Sequence[Callable] = image_writer.resolve_writer(self.output_ext) if writer is None else (writer,)
         self.writer_obj = None
 
         _output_dtype = output_dtype

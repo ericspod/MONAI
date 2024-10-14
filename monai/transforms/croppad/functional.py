@@ -14,6 +14,7 @@ A collection of "functional" transforms for spatial operations.
 
 from __future__ import annotations
 
+from typing import Sequence
 import warnings
 
 import numpy as np
@@ -183,6 +184,7 @@ def pad_func(
     img_size = img.peek_pending_shape() if isinstance(img, MetaTensor) else img.shape[1:]
     spatial_rank = img.peek_pending_rank() if isinstance(img, MetaTensor) else 3
     do_pad = np.asarray(to_pad).any()
+    shape: Sequence[int]
     if do_pad:
         to_pad_list = [(int(p[0]), int(p[1])) for p in to_pad]
         if len(to_pad_list) < len(img.shape):
