@@ -559,7 +559,7 @@ def _non_zipping_check(batch_data: Mapping | Iterable, detach: bool, pad: bool, 
     else:
         raise NotImplementedError(f"Unable to de-collate: {batch_data}, type: {type(batch_data)}.")
     batch_size, non_iterable = 0, []
-    for k, v in iter(_deco.items() if isinstance(_deco, Mapping) else enumerate(_deco)):
+    for k, v in _deco.items() if isinstance(_deco, Mapping) else enumerate(_deco):
         if not isinstance(v, Iterable) or isinstance(v, (str, bytes)) or (isinstance(v, torch.Tensor) and v.ndim == 0):
             # Not running the usual list decollate here:
             # don't decollate ['test', 'test'] into [['t', 't'], ['e', 'e'], ['s', 's'], ['t', 't']]
