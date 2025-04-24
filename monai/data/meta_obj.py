@@ -15,7 +15,7 @@ import itertools
 import pprint
 from collections.abc import Iterable
 from copy import deepcopy
-from typing import Any
+from typing import Any, Sequence, Mapping
 
 import numpy as np
 import torch
@@ -183,8 +183,10 @@ class MetaObj:
         """Set the meta."""
         if d == TraceKeys.NONE:
             self._meta = MetaObj.get_default_meta()
-        else:
-            self._meta = d
+        elif not isinstance(d, Mapping):
+            raise ValueError(f"Value for `meta` must be a mapping, given type of `t` is {type(t)}.")
+        
+        self._meta = dict(d)
 
     @property
     def applied_operations(self) -> list[dict]:
@@ -199,8 +201,10 @@ class MetaObj:
         if t == TraceKeys.NONE:
             # received no operations when decollating a batch
             self._applied_operations = MetaObj.get_default_applied_operations()
-            return
-        self._applied_operations = t
+        elif not isinstance(t, Sequence):
+            raise ValueError(f"Value for `applied_operations` must be a sequence, given type of `t` is {type(t)}.")
+
+        self._applied_operations = list(t)
 
     def push_applied_operation(self, t: Any) -> None:
         self._applied_operations.append(t)
