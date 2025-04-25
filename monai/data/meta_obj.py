@@ -184,7 +184,7 @@ class MetaObj:
         if d == TraceKeys.NONE:
             self._meta = MetaObj.get_default_meta()
         elif not isinstance(d, Mapping):
-            raise ValueError(f"Value for `meta` must be a mapping, given type of `t` is {type(t)}.")
+            raise ValueError(f"Value for `meta` must be a mapping, given type of `t` is {type(d)}.")
         
         self._meta = dict(d)
 
