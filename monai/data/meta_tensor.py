@@ -160,6 +160,9 @@ class MetaTensor(MetaObj, torch.Tensor):
             self.affine = self.get_default_affine()
         # applied_operations
         if applied_operations is not None:
+            if not isinstance(applied_operations, Sequence):
+                raise ValueError(f"Argument `applied_operations` must be a sequence, not {type(applied_operations)}")
+            
             self.applied_operations = applied_operations
         else:
             self.applied_operations = MetaObj.get_default_applied_operations()
