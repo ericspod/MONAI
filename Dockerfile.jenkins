@@ -1,0 +1,19 @@
+FROM nvcr.io/nvidia/pytorch:24.10-py3
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y libopenslide0 curl git zip
+
+COPY . /monai
+
+# RUN git clone https://github.com/Project-MONAI/MONAI.git
+
+WORKDIR /monai
+
+# RUN python -m pip install --upgrade pip
+# RUN python -m pip install -r requirements-dev.txt
+
+# RUN python -m pip install .[all]
+
+
+

@@ -49,7 +49,7 @@ coverage.xml
 .pytest_cache/
 
 # temporary unittest artifacts
-tests/testing_data/temp_*
+tests/testing_data/*
 
 # Translations
 *.mo

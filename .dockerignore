@@ -1,5 +1,7 @@
 # Ignore the following files/folders during docker build
 
+.git
+
 __pycache__/
 docs/
 

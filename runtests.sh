@@ -718,14 +718,17 @@ fi
 # unit tests
 if [ $doUnitTests = true ]
 then
+    set +e  # disable exit on failure so that diagnostics can be given on failure
     echo "${separator}${blue}unittests${noColor}"
     torch_validate
     ${cmdPrefix}${cmd} ./tests/runner.py -p "^(?!test_integration).*(?<!_dist)$"  # excluding integration/dist tests
+    set -e # enable exit on failure
 fi
 
 # distributed test only
 if [ $doDistTests = true ]
 then
+    set +e  # disable exit on failure so that diagnostics can be given on failure
     echo "${separator}${blue}run distributed unit test cases${noColor}"
     torch_validate
     for i in  $(find ./tests/ -name "*_dist.py")
@@ -733,6 +736,7 @@ then
         echo "$i"
         ${cmdPrefix}${cmd} "$i"
     done
+    set -e # enable exit on failure
 fi
 
 # network training/inference/eval integration tests
