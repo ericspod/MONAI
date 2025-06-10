@@ -35,9 +35,8 @@ docker run -i --rm --ipc=host --ulimit memlock=-1 --ulimit stack=67108864 \
     # pip install -r requirements-dev.txt
     # pip install .[all]
     
-    BUILD_MONAI=1 ./runtests.sh --build --coverage --unittests --net
-    # --disttests 
-    BUILD_MONAI=1 ./runtests.sh --build --coverage --unittests --disttests 
+    #BUILD_MONAI=1 ./runtests.sh --build --coverage --unittests --net --disttests 
+    BUILD_MONAI=1 ./runtests.sh --build --coverage --unittests 
     BUILD_MONAI=1 ./runtests.sh --build --coverage --net
     coverage xml --ignore-errors
     

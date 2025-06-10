@@ -13,3 +13,6 @@ coverage.xml
 *.toml
 
 !README.md
+
+# temporary unittest artifacts
+tests/testing_data/*
