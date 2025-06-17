@@ -1,30 +1,18 @@
 #! /bin/bash
 
-# docker build . -f ../tests/jenkins/Dockerfile -t jenkins
-
-# pip uninstall monai -y
-
-export CUDA_VISIBLE_DEVICES=0,1
-export MAX_JOBS=64
-
-rm -rf .eggs monai.egg-info *.zarr .coverage cufile.log runner.log
-
-# BUILD_MONAI=1 ./runtests.sh --build --coverage --unittests --disttests
-# BUILD_MONAI=1 ./runtests.sh --build --coverage --net 
-
-# BUILD_MONAI=1 ./runtests.sh -u --net --coverage
-
-# coverage combine --append .coverage
 
 # IMG=nvcr.io/nvidia/pytorch:24.10-py3
 IMG=monai
 
 
-run_script=$(date '+/tmp/coverage_%s.py')
 timestamp=$(date '+coverage_%Y%m%d_%H%M%S')
+run_script="/tmp/coverage_${timestamp}.py"
 
 cat - > $run_script << _EOF_
 (
+    # export CUDA_VISIBLE_DEVICES=0,1
+    # export MAX_JOBS=64
+
     pwd
     nvidia-smi
 
@@ -43,13 +31,20 @@ cat - > $run_script << _EOF_
     BUILD_MONAI=1 ./runtests.sh --build --coverage --disttests
     coverage xml --ignore-errors
     
-    zip -r ${timestamp}.zip .coverage coverage.xml
+    zip -r ${timestamp}.zip .coverage coverage.xml ${run_script}
+    rm -rf .eggs monai.egg-info *.zarr .coverage cufile.log runner.log
     chown -R $(id -u):$(id -g) .
 ) 2>&1 | tee ${timestamp}.log
 _EOF_
 
 
-docker run -d --ipc=host --ulimit memlock=-1 --ulimit stack=67108864 \
+docker run -d --rm --ipc=host --ulimit memlock=-1 --ulimit stack=67108864 \
         -v $(pwd):/monai -v /tmp:/tmp -w /monai --gpus '"device=0,1"' $IMG \
         /bin/bash $run_script 
-        #2>&1 | tee run_coverage.log
+
+
+# curl -Os https://uploader.codecov.io/latest/linux/codecov
+# chmod +x codecov
+# MONAI_HASH=$(python -c 'import monai; print(monai.__revision_id__)')
+# CODECOV_TOKEN=go-find-it
+# ./codecov -t ${CODECOV_TOKEN} -B dev -C ${MONAI_HASH} -f '!*.sh'
