@@ -46,13 +46,16 @@ __all__ = ["MedNISTDataset", "DecathlonDataset", "CrossValidation", "TciaDataset
 
 class MedNISTDataset(Randomizable, CacheDataset):
     """
-    The Dataset to automatically download MedNIST data and generate items for training, validation or test.
-    It's based on `CacheDataset` to accelerate the training process.
+    The Dataset to automatically download MedNIST data and generate items for training, validation or test. It's based
+    on `CacheDataset` to accelerate the training process. A random shuffling is performed before dividing items into the
+    traing/validation/test subsets so class ratios are not maintained. The names of the classes can be queried with the
+    method `get_classes()`.
 
     Args:
         root_dir: target directory to download and load MedNIST dataset.
         section: expected data section, can be: `training`, `validation` or `test`.
-        transform: transforms to execute operations on input data.
+        transform: transforms to execute operations on input data, if the default value () is given the transform
+            `LoadImaged("image")` will be used to load images.
         download: whether to download and extract the MedNIST from resource link, default is False.
             if expected file already exists, skip downloading even set it to True.
             user can manually copy `MedNIST.tar.gz` file or `MedNIST` folder to root directory.
@@ -81,9 +84,31 @@ class MedNISTDataset(Randomizable, CacheDataset):
         ValueError: When ``root_dir`` is not a directory.
         RuntimeError: When ``dataset_dir`` doesn't exist and downloading is not selected (``download=False``).
 
+    Example::
+
+        from monai.apps import MedNISTDataset
+        from monai.transforms import Compose, LoadImaged, ScaleIntensityd
+
+        transform = Compose([
+            # load file stored in "image" and replace with tensor data
+            LoadImaged(keys="image", ensure_channel_first=True),
+            # rescale tensor values to the [0, 1] range
+            ScaleIntensityd(keys="image")
+        ])
+
+        dataset = MedNISTDataset(
+            root_dir=".",         # where to store files
+            transform=transform,  # transform to apply to items
+            section="training",   # select the training subset
+            download=True         # download from remote source
+        )
+
+        print(dataset.get_classes())
+        print(dataset[0])
+
     """
 
-    resource = "https://github.com/Project-MONAI/MONAI-extra-test-data/releases/download/0.8.1/MedNIST.tar.gz"
+    resource = "https://huggingface.co/datasets/MONAI/testing_data/resolve/main/MedNIST.tar.gz"
     md5 = "0bc7306e7427e00ad1c5526a6677552d"
     compressed_file_name = "MedNIST.tar.gz"
     dataset_folder_name = "MedNIST"
@@ -114,7 +139,6 @@ class MedNISTDataset(Randomizable, CacheDataset):
         self.set_random_state(seed=seed)
         tarfile_name = root_dir / self.compressed_file_name
         dataset_dir = root_dir / self.dataset_folder_name
-        self.num_class = 0
         if download:
             download_and_extract(
                 url=self.resource,
@@ -129,7 +153,9 @@ class MedNISTDataset(Randomizable, CacheDataset):
             raise RuntimeError(
                 f"Cannot find dataset directory: {dataset_dir}, please use download=True to download it."
             )
-        data = self._generate_data_list(dataset_dir)
+        data, self.class_names = self._generate_data_list(dataset_dir)
+        self.num_classes = len(self.class_names)
+
         if transform == ():
             transform = LoadImaged("image")
         CacheDataset.__init__(
@@ -150,7 +176,11 @@ class MedNISTDataset(Randomizable, CacheDataset):
 
     def get_num_classes(self) -> int:
         """Get number of classes."""
-        return self.num_class
+        return self.num_classes
+
+    def get_classes(self) -> tuple[str, ...]:
+        """Returns the class name strings in order."""
+        return self.class_names
 
     def _generate_data_list(self, dataset_dir: PathLike) -> list[dict]:
         """
@@ -160,18 +190,14 @@ class MedNISTDataset(Randomizable, CacheDataset):
         """
         dataset_dir = Path(dataset_dir)
         class_names = sorted(f"{x.name}" for x in dataset_dir.iterdir() if x.is_dir())  # folder name as the class name
-        self.num_class = len(class_names)
-        image_files = [[f"{x}" for x in (dataset_dir / class_names[i]).iterdir()] for i in range(self.num_class)]
-        num_each = [len(image_files[i]) for i in range(self.num_class)]
-        image_files_list = []
-        image_class = []
-        class_name = []
-        for i in range(self.num_class):
-            image_files_list.extend(image_files[i])
-            image_class.extend([i] * num_each[i])
-            class_name.extend([class_names[i]] * num_each[i])
+        num_classes = len(class_names)
+        image_files = [[f"{x}" for x in (dataset_dir / c).iterdir()] for c in class_names]
+        num_each = [len(image_files[i]) for i in range(num_classes)]
+        image_files = sum(image_files, [])
+        image_class = sum([[i] * num_each[i] for i in range(num_classes)], [])
+        class_name = sum([[c] * num_each[i] for i, c in enumerate(class_names)], [])
 
-        length = len(image_files_list)
+        length = len(image_files)
         indices = np.arange(length)
         self.randomize(indices)
 
@@ -187,11 +213,11 @@ class MedNISTDataset(Randomizable, CacheDataset):
             raise ValueError(
                 f'Unsupported section: {self.section}, available options are ["training", "validation", "test"].'
             )
+
         # the types of label and class name should be compatible with the pytorch dataloader
-        return [
-            {"image": image_files_list[i], "label": image_class[i], "class_name": class_name[i]}
-            for i in section_indices
-        ]
+        data = [dict(image=image_files[i], label=image_class[i], class_name=class_name[i]) for i in section_indices]
+
+        return data, tuple(class_names)
 
 
 class DecathlonDataset(Randomizable, CacheDataset):
