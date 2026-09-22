@@ -19,29 +19,15 @@ from typing import Literal, overload
 import torch
 import torch.distributed as dist
 
+from monai.utils.devices import get_dist_device
 from monai.utils.enums import IgniteInfo
 from monai.utils.module import min_version, optional_import
 
 idist, has_ignite = optional_import("ignite", IgniteInfo.OPT_IMPORT_VERSION, min_version, "distributed")
 
+# re-exporting get_dist_device here for compatibility.
 __all__ = ["get_dist_device", "evenly_divisible_all_gather", "string_list_all_gather", "RankFilter"]
 
-
-def get_dist_device():
-    """
-    Get the expected target device in the native PyTorch distributed data parallel.
-    For NCCL backend, return GPU device of current process.
-    For GLOO backend, return CPU.
-    For any other backends, return None as the default, tensor.to(None) will not change the device.
-
-    """
-    if dist.is_initialized():
-        backend = dist.get_backend()
-        if backend == "nccl" and torch.cuda.is_available():
-            return torch.device(f"cuda:{torch.cuda.current_device()}")
-        if backend == "gloo":
-            return torch.device("cpu")
-    return None
 
 
 @overload

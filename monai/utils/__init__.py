@@ -15,7 +15,8 @@ from .compare_sources import SKIP_EXTS, files_considered_equal, sources_equal
 from .component_store import ComponentStore
 from .decorators import MethodReplacer, RestartGenerator
 from .deprecate_utils import DeprecatedError, deprecated, deprecated_arg, deprecated_arg_default
-from .dist import RankFilter, evenly_divisible_all_gather, get_dist_device, string_list_all_gather
+from .devices import get_default_device, get_default_rank, is_rank_0, get_dist_device
+from .dist import RankFilter, evenly_divisible_all_gather, string_list_all_gather
 from .enums import (
     AdversarialIterationEvents,
     AdversarialKeys,
