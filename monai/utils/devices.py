@@ -32,7 +32,7 @@ def get_default_device(
             default), use the current device.
         device: if not None, create a device from this value and return it, all other arguments are ignored. This must
             be a device object already or a valid device string for constructing one.
-            
+
     Returns:
         torch.device object for the selected accelerator device (or CPU if none is found), or the given device.
 

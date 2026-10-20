@@ -18,7 +18,7 @@ import torch
 from parameterized import parameterized
 
 from monai.apps.vista3d.transforms import VistaPostTransformd, VistaPreTransformd
-from monai.utils import min_version, get_default_device
+from monai.utils import get_default_device, min_version
 from monai.utils.module import optional_import
 
 measure, has_measure = optional_import("skimage.measure", "0.14.2", min_version)

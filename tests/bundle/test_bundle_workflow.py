@@ -22,7 +22,6 @@ import warnings
 from copy import deepcopy
 from pathlib import Path
 
-from monai.utils import get_default_device
 import nibabel as nib
 import numpy as np
 import torch
@@ -33,6 +32,7 @@ from monai.data import Dataset
 from monai.inferers import SimpleInferer, SlidingWindowInferer
 from monai.networks.nets import UNet
 from monai.transforms import Compose, LoadImage, LoadImaged, SaveImaged
+from monai.utils import get_default_device
 from tests.nonconfig_workflow import NonConfigWorkflow, PythonicWorkflowImpl
 
 MODULE_PATH = Path(__file__).resolve().parents[1]

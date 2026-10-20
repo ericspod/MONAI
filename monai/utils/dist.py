@@ -29,7 +29,6 @@ idist, has_ignite = optional_import("ignite", IgniteInfo.OPT_IMPORT_VERSION, min
 __all__ = ["get_dist_device", "evenly_divisible_all_gather", "string_list_all_gather", "RankFilter"]
 
 
-
 @overload
 def evenly_divisible_all_gather(data: torch.Tensor, concat: Literal[True]) -> torch.Tensor: ...
 

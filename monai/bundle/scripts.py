@@ -27,7 +27,6 @@ from typing import Any
 
 import numpy as np
 import torch
-from torch.cuda import is_available
 
 from monai._version import get_versions
 from monai.apps.utils import _basename, _extract_zip, download_url, extractall, get_logger
@@ -48,12 +47,12 @@ from monai.utils import (
     IgniteInfo,
     check_parent_dir,
     ensure_tuple,
+    get_default_device,
     get_equivalent_dtype,
     min_version,
     optional_import,
     pprint_edges,
     safe_eval,
-    get_default_device,
 )
 
 validate, _ = optional_import("jsonschema", name="validate")

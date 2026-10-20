@@ -17,7 +17,7 @@ import torch
 from parameterized import parameterized
 
 from monai.handlers import CalibrationError, from_engine
-from monai.utils import IgniteInfo, min_version, optional_import, get_default_device
+from monai.utils import IgniteInfo, get_default_device, min_version, optional_import
 from tests.test_utils import assert_allclose
 
 Engine, has_ignite = optional_import("ignite.engine", IgniteInfo.OPT_IMPORT_VERSION, min_version, "Engine")
