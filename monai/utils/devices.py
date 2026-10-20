@@ -32,22 +32,27 @@ def get_default_device(
             default), use the current device.
         device: if not None, create a device from this value and return it, all other arguments are ignored. This must
             be a device object already or a valid device string for constructing one.
+            
     Returns:
         torch.device object for the selected accelerator device (or CPU if none is found), or the given device.
+
+    Raises:
+        ValueError: if `device_index` is given and not an int, or outside the range [0, torch.cuda.device_count() - 1].
     """
 
     if device is not None:
         return torch.device(device)
 
     device_str = "cpu"
+
+    # always check for correct argumentvalue even if CUDA isn't available
+    if device_index is not None:
+        if not isinstance(device_index, int) or device_index < 0 or device_index >= torch.cuda.device_count():
+            raise ValueError(f"Invalid argument: {device_index=}, device count is {torch.cuda.device_count()}.")
+
     if torch.cuda.is_available():
-        if device_index is not None:
-            if device_index < 0 or device_index >= torch.cuda.device_count():
-                raise ValueError(f"Invalid argument: {device_index=}, device count is {torch.cuda.device_count()}.")
-        elif use_rank:
-            device_index = get_default_rank()
-        else:
-            device_index = torch.cuda.current_device()
+        if device_index is None:
+            device_index = get_default_rank() if use_rank else torch.cuda.current_device()
 
         device_str = f"cuda:{int(device_index)}"
     elif torch.backends.mps.is_available():
@@ -66,6 +71,9 @@ def get_default_rank() -> int:
     """
     Returns the current rank if `torch.distributed` is initialized, else 0. This will succeed if distributed is not
     initialized so can be used to choose a default rank or device index in non-distributed runs.
+
+    Returns:
+        0 if torch.distributed is not initialized, otherwise the current rank (which may be 0).
     """
     return dist.get_rank() if dist.is_initialized() else 0
 
@@ -73,15 +81,27 @@ def get_default_rank() -> int:
 def is_rank_0() -> bool:
     """
     Returns True if the current rank is 0 or if not in a distributed environment, False otherwise. This will succeed in
-    non-distributed environments with a return value of True, this can be used as a safe way of determining when things
-    should be done for rank 0 or when not using multiprocessing.
+    non-distributed environments with a return value of True, this can be used as a safe way of determining when to do
+    things on rank 0 or when not using multiprocessing. For example, use this to disable logging on other ranks.
+
+    Returns:
+        True if the current rank is 0 or torch.distributed isn't initialized, False otherwise.
     """
     return get_default_rank() == 0
 
 
 def is_on_cpu(device_or_tensor: torch.device | torch.tensor) -> bool:
     """
-    Returns True if `device_or_tensor` is the CPU device, or a tensor allocated in CPU memory, False otherwise.
+    Returns the expected target device in the native PyTorch distributed data parallel based on backend. For the NCCL
+    backend, returns the current device of current process (or of the current rank if `use_rank` is True). For the GLOO
+    backend, or if CUDA isn't available, returns the CPU device. For any other backends or if torch.distributed isn't
+    initialized, returns None as the default which is safe as `tensor.to(None)` will not change a tensor's device.
+
+    Arg:
+        use_rank: If True, select the current rank for the device index if a CUDA device is returned.
+
+    Returns:
+        The default device if NCCL is the backend and CUDA is available, CPU device if GLOO, None otherwise.
     """
     if isinstance(device_or_tensor, torch.tensor):
         device_or_tensor = device_or_tensor.device
