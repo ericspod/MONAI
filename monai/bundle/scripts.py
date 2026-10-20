@@ -53,6 +53,7 @@ from monai.utils import (
     optional_import,
     pprint_edges,
     safe_eval,
+    get_default_device,
 )
 
 validate, _ = optional_import("jsonschema", name="validate")
@@ -717,8 +718,7 @@ def load(
     net_override = {} if net_override is None else net_override
     copy_model_args = {} if copy_model_args is None else copy_model_args
 
-    if device is None:
-        device = "cuda:0" if is_available() else "cpu"
+    device = get_default_device(device=device)
     if model_file is None:
         model_file = os.path.join("models", "model.ts" if load_ts_module is True else "model.pt")
     if source == "ngc":
@@ -1232,7 +1232,7 @@ def verify_net_in_out(
         "config_file",
         "meta_file",
         net_id="",
-        device="cuda:0" if is_available() else "cpu",
+        device=get_default_device(),
         p=1,
         n=1,
         any=1,

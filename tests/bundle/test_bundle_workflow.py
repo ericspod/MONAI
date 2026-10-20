@@ -22,6 +22,7 @@ import warnings
 from copy import deepcopy
 from pathlib import Path
 
+from monai.utils import get_default_device
 import nibabel as nib
 import numpy as np
 import torch
@@ -79,7 +80,7 @@ class TestBundleWorkflow(unittest.TestCase):
         # test optional properties get
         self.assertTrue(inferer.key_metric is None)
         inferer.bundle_root = "/workspace/data/spleen_ct_segmentation"
-        inferer.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        inferer.device = get_default_device()
         inferer.network_def = deepcopy(net)
         inferer.inferer = deepcopy(sliding_window)
         inferer.preprocessing = deepcopy(preprocessing)

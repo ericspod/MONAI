@@ -54,7 +54,7 @@ DEFAULT_METADATA = {
 
 DEFAULT_INFERENCE = {
     "imports": ["$import glob"],
-    "device": "$torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')",
+    "device": "$monai.utils.get_default_device()",
     "ckpt_path": "$@bundle_root + '/models/model.pt'",
     "dataset_dir": "/workspace/data",
     "datalist": "$list(sorted(glob.glob(@dataset_dir + '/*.jpeg')))",

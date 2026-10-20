@@ -18,12 +18,12 @@ from parameterized import parameterized
 
 from monai.apps.generation.maisi.networks.autoencoderkl_maisi import AutoencoderKlMaisi
 from monai.networks import eval_mode
-from monai.utils import optional_import
+from monai.utils import optional_import, get_default_device
 
 tqdm, has_tqdm = optional_import("tqdm", name="tqdm")
 _, has_einops = optional_import("einops")
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = get_default_device()
 
 CASES_NO_ATTENTION = [
     [

@@ -18,12 +18,12 @@ import torch
 from parameterized import parameterized
 
 from monai.apps.vista3d.transforms import VistaPostTransformd, VistaPreTransformd
-from monai.utils import min_version
+from monai.utils import min_version, get_default_device
 from monai.utils.module import optional_import
 
 measure, has_measure = optional_import("skimage.measure", "0.14.2", min_version)
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = get_default_device()
 
 
 TEST_VISTA_PRETRANSFORM = [

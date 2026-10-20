@@ -17,12 +17,12 @@ import torch
 from parameterized import parameterized
 
 from monai.handlers import CalibrationError, from_engine
-from monai.utils import IgniteInfo, min_version, optional_import
+from monai.utils import IgniteInfo, min_version, optional_import, get_default_device
 from tests.test_utils import assert_allclose
 
 Engine, has_ignite = optional_import("ignite.engine", IgniteInfo.OPT_IMPORT_VERSION, min_version, "Engine")
 
-_device = "cuda:0" if torch.cuda.is_available() else "cpu"
+_device = get_default_device()
 
 # Test cases for handler
 # Format: [input_params, expected_value, expected_rows, expected_channels]
