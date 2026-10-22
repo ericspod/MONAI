@@ -14,7 +14,7 @@ from __future__ import annotations
 import torch
 import torch.distributed as dist
 
-__all__ = ["get_default_device", "get_default_rank", "is_rank_0", "get_dist_device"]
+__all__ = ["get_default_device", "get_default_rank", "is_rank_0", "is_on_cpu", "get_dist_device"]
 
 
 def get_default_device(
@@ -23,7 +23,8 @@ def get_default_device(
     """
     Returns a usable default device for tensors. If CUDA is present, a CUDA device is returned with the selected device
     having index `device_idx`, the current rank if `use_rank` is True, or the current device if `use_rank` is False.
-    If MPS is available but not CUDA, this device is returned. If neither is available, the CPU device is returned.
+    If MPS is available but not CUDA, this device is returned using the given index or if None the given rank.
+    If neither is available, the CPU device is returned.
 
     Args:
         device_idx: index value of device to use for CUDA or MPS, if None this will be chosen to be the default rank
@@ -45,16 +46,17 @@ def get_default_device(
 
     device_str = "cpu"
 
-    # always check for correct argumentvalue even if CUDA isn't available
-    if device_idx is not None:
-        if not isinstance(device_idx, int) or device_idx < 0 or device_idx >= torch.cuda.device_count():
-            raise ValueError(f"Invalid argument: {device_idx=}, device count is {torch.cuda.device_count()}.")
-
     if torch.cuda.is_available():
-        if device_idx is None:
-            device_idx = get_default_rank() if use_rank else torch.cuda.current_device()
+        if device_idx is not None:
+            if not isinstance(device_idx, int) or device_idx < 0 or device_idx >= torch.cuda.device_count():
+                raise ValueError(f"Invalid argument: {device_idx=}, device count is {torch.cuda.device_count()}.")
+        elif use_rank:
+            device_idx = get_default_rank()
+        else:
+            device_idx = torch.cuda.current_device()
 
         device_str = f"cuda:{int(device_idx)}"
+
     elif torch.backends.mps.is_available():
         if device_idx is not None:
             if device_idx < 0 or device_idx >= torch.mps.device_count():
@@ -92,13 +94,10 @@ def is_rank_0() -> bool:
 
 def is_on_cpu(device_or_tensor: torch.device | torch.tensor) -> bool:
     """
-    Returns the expected target device in the native PyTorch distributed data parallel based on backend. For the NCCL
-    backend, returns the current device of current process (or of the current rank if `use_rank` is True). For the GLOO
-    backend, or if CUDA isn't available, returns the CPU device. For any other backends or if torch.distributed isn't
-    initialized, returns None as the default which is safe as `tensor.to(None)` will not change a tensor's device.
+    Returns True if the given torch.device is the CPU device, or the given or torch.tensor is allocated in CPU memory.
 
-    Arg:
-        use_rank: If True, select the current rank for the device index if a CUDA device is returned.
+    Args:
+        device_or_tensor: torch.device or torch.tensor object to check.
 
     Returns:
         The default device if NCCL is the backend and CUDA is available, CPU device if GLOO, None otherwise.
@@ -112,8 +111,8 @@ def is_on_cpu(device_or_tensor: torch.device | torch.tensor) -> bool:
 def get_dist_device(use_rank: bool = False) -> torch.device | None:
     """
     Returns the expected target device in the native PyTorch distributed data parallel environment. For NCCL backend,
-    and if CUDA is available, this returns the CUDA device of current process (or current rank if `use_rank` is True). 
-    For GLOO backend, this returns the CPU device. For other cases, returns None as the default, `tensor.to(None)` 
+    and if CUDA is available, this returns the CUDA device of current process (or current rank if `use_rank` is True).
+    For GLOO backend, this returns the CPU device. For other cases, returns None as the default, `tensor.to(None)`
     will not change the device.
 
     Args:
