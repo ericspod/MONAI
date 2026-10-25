@@ -7,7 +7,7 @@ requires = [
   "more-itertools>=8.0",
   "ninja",
   "packaging",
-  "torch>=2.21.1",
+  "torch>=2.12.1",
   "numpy>=1.24,<3.0",
   "backports.tarfile"  # see https://github.com/Project-MONAI/MONAI/issues/8791
 ]
