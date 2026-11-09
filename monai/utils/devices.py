@@ -11,10 +11,24 @@
 
 from __future__ import annotations
 
+from itertools import chain
+import os
+import re
 import torch
 import torch.distributed as dist
 
-__all__ = ["get_default_device", "get_default_rank", "is_rank_0", "is_on_cpu", "get_dist_device"]
+__all__ = [
+    "get_default_device",
+    "get_default_rank",
+    "find_device",
+    "is_rank_0",
+    "is_on_cpu",
+    "get_dist_device",
+    "count_env_devices",
+    "CUDA_VISIBLE_DEVICES",
+]
+
+CUDA_VISIBLE_DEVICES = "CUDA_VISIBLE_DEVICES"
 
 
 def get_default_device(
@@ -72,7 +86,7 @@ def get_default_device(
 def get_default_rank() -> int:
     """
     Returns the current rank if `torch.distributed` is initialized, else 0. This will succeed if distributed is not
-    initialized so can be used to choose a default rank or device index in non-distributed runs.
+    initialized so can be used to choose a default rank or device index in non-distributed environments.
 
     Returns:
         0 if torch.distributed is not initialized, otherwise the current rank (which may be 0).
@@ -92,20 +106,36 @@ def is_rank_0() -> bool:
     return get_default_rank() == 0
 
 
-def is_on_cpu(device_or_tensor: torch.device | torch.tensor) -> bool:
+def find_device(obj: torch.tensor | torch.nn.Module) -> torch.device:
     """
-    Returns True if the given torch.device is the CPU device, or the given or torch.tensor is allocated in CPU memory.
+    Returns the device of `obj` if it's a tensor, or searches for a tensor if a Module and returns its device.
 
     Args:
-        device_or_tensor: torch.device or torch.tensor object to check.
+        obj: torch.tensor or torch.nn.Module to find a device at least part of it resides on.
 
     Returns:
-        The default device if NCCL is the backend and CUDA is available, CPU device if GLOO, None otherwise.
+        The found device.
     """
-    if isinstance(device_or_tensor, torch.tensor):
-        device_or_tensor = device_or_tensor.device
+    if isinstance(obj, torch.nn.Module):
+        return next(chain(obj.parameters(), obj.buffers()), torch.empty(0)).device
+    else:
+        return obj.device
 
-    return device_or_tensor.type == "cpu"
+
+def is_on_cpu(obj: torch.device | torch.tensor | torch.nn.Module) -> bool:
+    """
+    Returns True if the given device is the CPU device, or the given tensor or model is allocated in CPU memory.
+
+    Args:
+        obj: torch.device, torch.tensor, or torch.nn.Module object to check.
+
+    Returns:
+        True if the device is the CPU device, False otherwise.
+    """
+    if not isinstance(obj, torch.device):
+        obj = find_device(obj)
+
+    return obj.type == "cpu"
 
 
 def get_dist_device(use_rank: bool = False) -> torch.device | None:
@@ -119,7 +149,7 @@ def get_dist_device(use_rank: bool = False) -> torch.device | None:
         use_rank: if True, use the current rank to select a device, if False (the default), use the current device.
 
     Returns:
-        Torch.device object representing the selected CUDA device if using NCCL, CPU if using gloo, None otherwise.
+        torch.device object representing the selected CUDA device if using NCCL, CPU if using gloo, None otherwise.
     """
     backend = dist.get_backend() if dist.is_initialized() else None
 
@@ -129,3 +159,42 @@ def get_dist_device(use_rank: bool = False) -> torch.device | None:
         return torch.device("cpu")
 
     return None  # dist not initialized or neither NCCL or gloo backends
+
+
+def count_env_devices(visible_devices: str | None = None) -> int:
+    """
+    Count the devices given by the environment variable CUDA_VISIBLE_DEVICES or the supplied specified string if not
+    None. This will validate the format, raising ValueError if the formatting is incorrect. This count is what is given
+    and may be greater than the number of available devices.
+
+    Args:
+        visible_devices: device specified string, if None (the default) CUDA_VISIBLE_DEVICES is used instead.
+
+    Returns:
+        Number of specified devices
+
+    Raises:
+        ValueError: if any component of the specified string isn't a valid device index, UUID, or MIG specifier.
+    """
+    if visible_devices is None:
+        visible_devices = os.environ.get(CUDA_VISIBLE_DEVICES, "").strip()
+
+    if visible_devices in {"", "-1"}:
+        return 0
+
+    split_devices = [d.strip() for d in visible_devices.split(",")]
+
+    if not all(split_devices):
+        raise ValueError(f"Invalid device specifier with consecutive commas: {visible_devices}")
+
+    index_pattern = r"\d+"
+    uuid_pattern = r"(?:GPU|MIG)-[0-9a-fA-F]{8}-(?:[0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}"
+    mig_spec_uuid = r"MIG-GPU-[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4})*(?:-[0-9a-fA-F]{12})?/\d+/\d+"
+    item_regex = re.compile(f"^(?:{index_pattern}|{uuid_pattern}|{mig_spec_uuid})$")
+
+    bad_devices = [d for d in split_devices if not item_regex.match(d)]
+
+    if bad_devices:
+        raise ValueError(f"Invalid device specifier with invalid devices: {bad_devices}")
+
+    return len(split_devices)
